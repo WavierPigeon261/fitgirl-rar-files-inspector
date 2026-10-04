@@ -1,0 +1,44 @@
+name: Build and Release FitGirl RAR Files Inspector
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Executable via PowerShell
+        shell: powershell
+        run: |
+          .\setup_project.ps1
+
+      - name: Verify Executable Creation
+        shell: powershell
+        run: |
+          if (Test-Path "fitgirl-rar-files-inspector.exe") {
+              Write-Host "Executable compiled successfully!"
+          } else {
+              Write-Host "Error: Executable missing!"
+              exit 1
+          }
+
+      - name: Create GitHub Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: fitgirl-rar-files-inspector.exe
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
